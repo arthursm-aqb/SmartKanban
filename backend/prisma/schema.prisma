@@ -1,0 +1,222 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum TeamRole {
+  OWNER
+  MEMBER
+}
+
+enum ContextFileType {
+  PDF
+  MD
+  TXT
+}
+
+enum ColumnType {
+  BACKLOG
+  SPECIFICATION
+  IMPLEMENTATION
+  CODE_REVIEW
+}
+
+enum SubcolumnType {
+  BACKLOG
+  IN_SPECIFICATION
+  SPECIFIED
+  IN_IMPLEMENTATION
+  IMPLEMENTED
+  IN_REVIEW
+  REVIEWED
+}
+
+enum StickyNoteColor {
+  YELLOW
+  BLUE
+  PINK
+  GREEN
+}
+
+model User {
+  id           String           @id @default(uuid())
+  name         String
+  email        String           @unique
+  passwordHash String
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  sessions     RefreshSession[]
+  memberships  TeamMember[]
+  createdTeams Team[]           @relation("TeamCreator")
+  stories      UserStory[]
+  tasks        Task[]
+  stickyNotes  StickyNote[]
+  activityLogs ActivityLog[]
+}
+
+model RefreshSession {
+  id                  String    @id @default(uuid())
+  userId              String
+  familyId            String
+  tokenHash           String    @unique
+  expiresAt           DateTime
+  revokedAt           DateTime?
+  replacedBySessionId String?
+  createdAt           DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([familyId])
+}
+
+model Team {
+  id          String       @id @default(uuid())
+  name        String
+  inviteCode  String       @unique
+  createdById String
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  createdBy User         @relation("TeamCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  members   TeamMember[]
+  project   Project?
+}
+
+model TeamMember {
+  id       String   @id @default(uuid())
+  teamId   String
+  userId   String
+  role     TeamRole @default(MEMBER)
+  joinedAt DateTime @default(now())
+
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, userId])
+  @@index([userId])
+}
+
+model Project {
+  id              String          @id @default(uuid())
+  teamId          String          @unique
+  name            String
+  contextFileName String
+  contextFileType ContextFileType
+  contextText     String          @db.Text
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  team  Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  board Board?
+}
+
+model Board {
+  id        String   @id @default(uuid())
+  projectId String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  project      Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  columns      BoardColumn[]
+  stories      UserStory[]
+  tasks        Task[]
+  stickyNotes  StickyNote[]
+  activityLogs ActivityLog[]
+}
+
+model BoardColumn {
+  id       String     @id @default(uuid())
+  boardId  String
+  type     ColumnType
+  wipLimit Int?
+  position Int
+
+  board Board @relation(fields: [boardId], references: [id], onDelete: Cascade)
+
+  @@unique([boardId, type])
+  @@index([boardId])
+}
+
+model UserStory {
+  id          String        @id @default(uuid())
+  boardId     String
+  columnType  ColumnType    @default(BACKLOG)
+  subcolumn   SubcolumnType @default(BACKLOG)
+  title       String
+  description String        @default("") @db.Text
+  position    Int           @default(0)
+  authorId    String
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  board  Board  @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  author User   @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  tasks  Task[]
+
+  @@index([boardId, subcolumn])
+}
+
+model Task {
+  id                   String        @id @default(uuid())
+  boardId              String
+  storyId              String
+  columnType           ColumnType    @default(SPECIFICATION)
+  subcolumn            SubcolumnType @default(SPECIFIED)
+  title                String
+  description          String        @default("") @db.Text
+  position             Int           @default(0)
+  priorityScore        Int
+  priorityConfidence   Float
+  priorityCriteriaJson Json
+  classifiedByModel    String
+  authorId             String
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+
+  board  Board     @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  story  UserStory @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  author User      @relation(fields: [authorId], references: [id], onDelete: Restrict)
+
+  @@index([boardId, subcolumn])
+  @@index([storyId])
+}
+
+model StickyNote {
+  id        String          @id @default(uuid())
+  boardId   String
+  content   String          @db.Text
+  color     StickyNoteColor @default(YELLOW)
+  posX      Float           @default(40)
+  posY      Float           @default(40)
+  authorId  String
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  board  Board @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  author User  @relation(fields: [authorId], references: [id], onDelete: Restrict)
+
+  @@index([boardId])
+}
+
+model ActivityLog {
+  id           String   @id @default(uuid())
+  boardId      String
+  actorId      String
+  actionType   String
+  entityType   String
+  entityId     String
+  summary      String
+  metadataJson Json?
+  createdAt    DateTime @default(now())
+
+  board Board @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  actor User  @relation(fields: [actorId], references: [id], onDelete: Restrict)
+
+  @@index([boardId, createdAt(sort: Desc)])
+}
