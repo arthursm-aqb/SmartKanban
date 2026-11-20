@@ -23,12 +23,18 @@ export function createApp(container: AppContainer): CreatedApp {
   const app = express();
   const normalizedOrigin = container.frontendOrigin.replace(/\/+$/, '');
 
+  if (container.isProduction) {
+    // Required behind Railway reverse proxy so req.ip & express-rate-limit read X-Forwarded-For safely
+    app.set('trust proxy', 1);
+  }
+
   app.disable('x-powered-by');
   app.use(helmet());
   app.use(
     cors({
       origin: normalizedOrigin,
       credentials: true,
+      allowedHeaders: ['Content-Type', 'X-CSRF-Token'],
     }),
   );
   app.use(cookieParser());

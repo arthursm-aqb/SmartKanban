@@ -88,3 +88,24 @@ npm run build
 ```
 
 ---
+
+## Deploy em Produção (Vercel + Railway — branch `prod`)
+
+A branch `prod` está configurada para rodar o **frontend na Vercel** e o **backend + PostgreSQL no Railway** (`SameSite=None; Secure`, `trust proxy`, `railway.json` e `vercel.json`).
+
+### 1. Backend + PostgreSQL no Railway
+- Crie o serviço **PostgreSQL** e um serviço **Web** apontando para este repositório na branch `prod` com **Root Directory** = `backend`.
+- O arquivo [backend/railway.json](backend/railway.json) configura o build (`npm ci && npx prisma generate && npm run build`), start (`npm run start:prod`, que executa `npx prisma migrate deploy && node dist/main/server.js`) e healthcheck (`/api/health`).
+- Variáveis de ambiente obrigatórias no Railway:
+  - `NODE_ENV=production`
+  - `DATABASE_URL=${{Postgres.DATABASE_URL}}`
+  - `FRONTEND_ORIGIN=https://seu-projeto.vercel.app` *(URL exata da Vercel, sem `/` no final)*
+  - `JWT_ACCESS_SECRET` e `JWT_REFRESH_SECRET` *(distintos, >= 32 caracteres)*
+  - `GEMINI_API_KEY` e `GEMINI_MODEL=gemini-decision-1` *(opcional)*
+  - `COOKIE_SAME_SITE=none` *(padrão automático em `production`; use `lax` + `COOKIE_DOMAIN` apenas em domínio próprio compartilhado)*
+
+### 2. Frontend na Vercel
+- Crie um projeto na Vercel apontando para este repositório na branch `prod` com **Root Directory** = `frontend` (Framework: Vite).
+- O arquivo [frontend/vercel.json](frontend/vercel.json) habilita fallback de rotas SPA para `/index.html`.
+- Variável de ambiente obrigatória na Vercel:
+  - `VITE_API_URL=https://seu-backend.up.railway.app` *(URL pública HTTPS do serviço backend no Railway, sem `/` no final)*

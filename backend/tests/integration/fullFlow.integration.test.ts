@@ -471,4 +471,50 @@ describe('Integration: HTTP (HttpOnly + CSRF + Upload) & WebSocket (Kanban + WIP
       .set('X-CSRF-Token', alice.jar.csrfToken)
       .expect(401);
   });
+
+  it('emite cookies SameSite=None e Secure em modo produção cross-site e ativa trust proxy', async () => {
+    const prodOrigin = 'https://smart-kanban.vercel.app';
+    const { container } = createTestContainer({
+      frontendOrigin: prodOrigin,
+      isProduction: true,
+      cookieConfig: { secure: true, sameSite: 'none' },
+    });
+    running = createApp(container);
+
+    expect(running.app.get('trust proxy')).toBe(1);
+
+    const csrfRes = await request(running.app)
+      .get('/api/auth/csrf')
+      .set('Origin', prodOrigin)
+      .expect(200);
+    const csrfCookies = csrfRes.headers['set-cookie'] as unknown as string[];
+    const csrfCookie = csrfCookies.find((c) => c.startsWith(`${CSRF_COOKIE_NAME}=`));
+    expect(csrfCookie).toBeTruthy();
+    expect(csrfCookie).toContain('SameSite=None');
+    expect(csrfCookie).toContain('Secure');
+    expect(csrfRes.body.csrfToken).toBeTruthy();
+
+    const regRes = await request(running.app)
+      .post('/api/auth/register')
+      .set('Origin', prodOrigin)
+      .set('Cookie', `${CSRF_COOKIE_NAME}=${csrfRes.body.csrfToken}`)
+      .set('X-CSRF-Token', csrfRes.body.csrfToken)
+      .send({
+        name: 'Deploy User',
+        email: 'deploy@smartkanban.app',
+        password: 'PasswordForte123!',
+      })
+      .expect(201);
+
+    const regCookies = regRes.headers['set-cookie'] as unknown as string[];
+    const accessCookie = regCookies.find((c) => c.startsWith(`${ACCESS_COOKIE_NAME}=`));
+    const refreshCookie = regCookies.find((c) => c.startsWith(`${REFRESH_COOKIE_NAME}=`));
+    expect(accessCookie).toContain('HttpOnly');
+    expect(accessCookie).toContain('SameSite=None');
+    expect(accessCookie).toContain('Secure');
+    expect(refreshCookie).toContain('HttpOnly');
+    expect(refreshCookie).toContain('SameSite=None');
+    expect(refreshCookie).toContain('Secure');
+    expect(regRes.body.csrfToken).toBeTruthy();
+  });
 });

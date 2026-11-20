@@ -8,6 +8,7 @@ import { RegisterUserUseCase } from '../../../application/use-cases/auth/Registe
 import { UnauthorizedError } from '../../../domain/errors';
 import {
   clearAuthCookies,
+  CookieConfig,
   issueCsrfCookie,
   REFRESH_COOKIE_NAME,
   setAuthCookies,
@@ -20,11 +21,11 @@ export class AuthController {
     private readonly refreshSessionUseCase: RefreshSessionUseCase,
     private readonly logoutUseCase: LogoutUseCase,
     private readonly getCurrentUserUseCase: GetCurrentUserUseCase,
-    private readonly isProduction: boolean,
+    private readonly cookieConfig: CookieConfig,
   ) {}
 
   public csrf = (_req: Request, res: Response): void => {
-    const csrfToken = issueCsrfCookie(res, this.isProduction);
+    const csrfToken = issueCsrfCookie(res, this.cookieConfig);
     res.status(200).json({ csrfToken });
   };
 
@@ -35,7 +36,7 @@ export class AuthController {
     const csrfToken = setAuthCookies(
       res,
       { accessToken: session.accessToken, refreshToken: session.refreshToken },
-      this.isProduction,
+      this.cookieConfig,
     );
 
     res.status(201).json({ user: session.user, csrfToken });
@@ -48,7 +49,7 @@ export class AuthController {
     const csrfToken = setAuthCookies(
       res,
       { accessToken: session.accessToken, refreshToken: session.refreshToken },
-      this.isProduction,
+      this.cookieConfig,
     );
 
     res.status(200).json({ user: session.user, csrfToken });
@@ -57,7 +58,7 @@ export class AuthController {
   public refresh = async (req: Request, res: Response): Promise<void> => {
     const rawRefreshToken = req.cookies?.[REFRESH_COOKIE_NAME];
     if (typeof rawRefreshToken !== 'string' || rawRefreshToken.length === 0) {
-      clearAuthCookies(res, this.isProduction);
+      clearAuthCookies(res, this.cookieConfig);
       throw new UnauthorizedError('Refresh token ausente. Faça login novamente.');
     }
 
@@ -66,11 +67,11 @@ export class AuthController {
       const csrfToken = setAuthCookies(
         res,
         { accessToken: session.accessToken, refreshToken: session.refreshToken },
-        this.isProduction,
+        this.cookieConfig,
       );
       res.status(200).json({ user: session.user, csrfToken });
     } catch (error) {
-      clearAuthCookies(res, this.isProduction);
+      clearAuthCookies(res, this.cookieConfig);
       throw error;
     }
   };
@@ -82,7 +83,7 @@ export class AuthController {
         : undefined;
 
     await this.logoutUseCase.execute(rawRefreshToken);
-    clearAuthCookies(res, this.isProduction);
+    clearAuthCookies(res, this.cookieConfig);
     res.status(200).json({ ok: true });
   };
 
@@ -91,7 +92,7 @@ export class AuthController {
       throw new UnauthorizedError();
     }
     const user = await this.getCurrentUserUseCase.execute(req.authUser.id);
-    const csrfToken = issueCsrfCookie(res, this.isProduction);
+    const csrfToken = issueCsrfCookie(res, this.cookieConfig);
     res.status(200).json({ user, csrfToken });
   };
 }

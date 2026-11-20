@@ -6,7 +6,13 @@ export const envSchema = z
     NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
     PORT: z.coerce.number().int().min(1).max(65535).default(3333),
     DATABASE_URL: z.url('DATABASE_URL deve ser uma URL válida do PostgreSQL.'),
-    FRONTEND_ORIGIN: z.url('FRONTEND_ORIGIN deve ser uma URL válida (ex: http://localhost:5173).'),
+    FRONTEND_ORIGIN: z.url('FRONTEND_ORIGIN deve ser uma URL válida (ex: https://app.vercel.app).'),
+    COOKIE_SAME_SITE: z.enum(['lax', 'none']).optional(),
+    COOKIE_DOMAIN: z
+      .string()
+      .trim()
+      .transform((val) => (val.length > 0 ? val : undefined))
+      .optional(),
     JWT_ACCESS_SECRET: z
       .string()
       .min(32, 'JWT_ACCESS_SECRET deve ter pelo menos 32 caracteres.'),

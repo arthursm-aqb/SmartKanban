@@ -1,6 +1,9 @@
-const API_BASE_URL = (import.meta.env.VITE_API_URL as string | undefined) ?? '';
+const API_BASE_URL = ((import.meta.env.VITE_API_URL as string | undefined) ?? '')
+  .trim()
+  .replace(/\/+$/, '');
 
 let cachedCsrfToken = '';
+let csrfInFlight: Promise<string> | null = null;
 let refreshInFlight: Promise<boolean> | null = null;
 
 export class ApiClientError extends Error {
@@ -32,42 +35,70 @@ function readCookie(name: string): string {
   return '';
 }
 
-async function ensureCsrfToken(): Promise<string> {
+async function ensureCsrfToken(forceRefresh = false): Promise<string> {
   const fromCookie = readCookie('kanban_csrf_token');
-  if (fromCookie) {
-    cachedCsrfToken = fromCookie;
-    return fromCookie;
+  if (!forceRefresh) {
+    if (fromCookie) {
+      cachedCsrfToken = fromCookie;
+      return fromCookie;
+    }
+    // Em deploys cross-origin (Vercel + Railway), document.cookie não lê cookies do domínio da API;
+    // reutiliza o token retornado no JSON das respostas de autenticação/CSRF até expirar.
+    if (cachedCsrfToken) {
+      return cachedCsrfToken;
+    }
+  } else {
+    cachedCsrfToken = '';
   }
 
-  // Cookie is absent: request a fresh CSRF cookie from the backend instead of using stale memory
-  const res = await fetch(`${API_BASE_URL}/api/auth/csrf`, {
-    method: 'GET',
-    credentials: 'include',
-  });
-  if (res.ok) {
-    const data = (await res.json()) as { csrfToken?: string };
-    const refreshedCookie = readCookie('kanban_csrf_token');
-    const token = refreshedCookie || data.csrfToken || '';
-    if (token) {
-      cachedCsrfToken = token;
-      return token;
-    }
+  if (!csrfInFlight) {
+    csrfInFlight = (async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/auth/csrf`, {
+          method: 'GET',
+          credentials: 'include',
+        });
+        if (res.ok) {
+          const data = (await res.json()) as { csrfToken?: string };
+          const refreshedCookie = readCookie('kanban_csrf_token');
+          const token = refreshedCookie || data.csrfToken || '';
+          if (token) {
+            cachedCsrfToken = token;
+            return token;
+          }
+        }
+        return readCookie('kanban_csrf_token') || cachedCsrfToken;
+      } finally {
+        csrfInFlight = null;
+      }
+    })();
   }
-  return readCookie('kanban_csrf_token') || cachedCsrfToken;
+
+  return csrfInFlight;
 }
 
 async function tryRefreshSession(): Promise<boolean> {
   if (!refreshInFlight) {
     refreshInFlight = (async () => {
       try {
-        const csrf = await ensureCsrfToken();
-        const res = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
+        let csrf = await ensureCsrfToken();
+        let res = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
           method: 'POST',
           credentials: 'include',
           headers: {
             'X-CSRF-Token': csrf,
           },
         });
+        if (res.status === 403) {
+          csrf = await ensureCsrfToken(true);
+          res = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+              'X-CSRF-Token': csrf,
+            },
+          });
+        }
         if (res.ok) {
           const data = (await res.json()) as { csrfToken?: string };
           if (data.csrfToken) cachedCsrfToken = data.csrfToken;
@@ -86,7 +117,7 @@ async function tryRefreshSession(): Promise<boolean> {
 
 export async function apiFetch<T>(
   path: string,
-  options: RequestInit & { skipAutoRefresh?: boolean } = {},
+  options: RequestInit & { skipAutoRefresh?: boolean; skipCsrfRetry?: boolean } = {},
 ): Promise<T> {
   const method = (options.method ?? 'GET').toUpperCase();
   const isMutating = !['GET', 'HEAD', 'OPTIONS'].includes(method);
@@ -130,6 +161,16 @@ export async function apiFetch<T>(
 
   if (payload.csrfToken) {
     cachedCsrfToken = payload.csrfToken;
+  }
+
+  if (
+    res.status === 403 &&
+    isMutating &&
+    !options.skipCsrfRetry &&
+    (payload.message ?? '').toLowerCase().includes('anti-csrf')
+  ) {
+    await ensureCsrfToken(true);
+    return apiFetch<T>(path, { ...options, skipCsrfRetry: true });
   }
 
   if (!res.ok) {

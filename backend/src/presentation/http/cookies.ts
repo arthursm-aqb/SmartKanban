@@ -8,17 +8,26 @@ export const CSRF_COOKIE_NAME = 'kanban_csrf_token';
 const ACCESS_MAX_AGE_MS = 15 * 60 * 1000;
 const REFRESH_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 
-export function baseCookieOptions(isProduction: boolean): CookieOptions {
+export interface CookieConfig {
+  secure: boolean;
+  sameSite: 'lax' | 'none';
+  domain?: string;
+}
+
+export function baseCookieOptions(config: CookieConfig): CookieOptions {
+  // Browsers reject SameSite=None unless Secure=true
+  const secure = config.secure || config.sameSite === 'none';
   return {
-    sameSite: 'lax',
-    secure: isProduction,
+    sameSite: config.sameSite,
+    secure,
+    ...(config.domain ? { domain: config.domain } : {}),
   };
 }
 
-export function issueCsrfCookie(res: Response, isProduction: boolean): string {
+export function issueCsrfCookie(res: Response, config: CookieConfig): string {
   const csrfToken = crypto.randomBytes(32).toString('hex');
   res.cookie(CSRF_COOKIE_NAME, csrfToken, {
-    ...baseCookieOptions(isProduction),
+    ...baseCookieOptions(config),
     httpOnly: false,
     path: '/',
     maxAge: REFRESH_MAX_AGE_MS,
@@ -29,9 +38,9 @@ export function issueCsrfCookie(res: Response, isProduction: boolean): string {
 export function setAuthCookies(
   res: Response,
   tokens: { accessToken: string; refreshToken: string },
-  isProduction: boolean,
+  config: CookieConfig,
 ): string {
-  const base = baseCookieOptions(isProduction);
+  const base = baseCookieOptions(config);
 
   res.cookie(ACCESS_COOKIE_NAME, tokens.accessToken, {
     ...base,
@@ -47,11 +56,11 @@ export function setAuthCookies(
     maxAge: REFRESH_MAX_AGE_MS,
   });
 
-  return issueCsrfCookie(res, isProduction);
+  return issueCsrfCookie(res, config);
 }
 
-export function clearAuthCookies(res: Response, isProduction: boolean): void {
-  const base = baseCookieOptions(isProduction);
+export function clearAuthCookies(res: Response, config: CookieConfig): void {
+  const base = baseCookieOptions(config);
   res.clearCookie(ACCESS_COOKIE_NAME, { ...base, httpOnly: true, path: '/' });
   res.clearCookie(REFRESH_COOKIE_NAME, { ...base, httpOnly: true, path: '/api/auth' });
 }

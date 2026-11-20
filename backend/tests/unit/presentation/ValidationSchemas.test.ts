@@ -92,4 +92,27 @@ describe('Validation Schemas (Zod) & Env', () => {
       parseEnv({ ...baseEnv, JWT_REFRESH_SECRET: baseEnv.JWT_ACCESS_SECRET }),
     ).toThrow();
   });
+
+  it('valida COOKIE_SAME_SITE e COOKIE_DOMAIN opcionais no envSchema', () => {
+    const baseEnv = {
+      DATABASE_URL: 'postgresql://user:pass@localhost:5432/db',
+      FRONTEND_ORIGIN: 'https://smart-kanban.vercel.app',
+      JWT_ACCESS_SECRET: 'a'.repeat(32),
+      JWT_REFRESH_SECRET: 'b'.repeat(32),
+    };
+
+    const defaults = parseEnv(baseEnv);
+    expect(defaults.COOKIE_SAME_SITE).toBeUndefined();
+    expect(defaults.COOKIE_DOMAIN).toBeUndefined();
+
+    const crossSite = parseEnv({
+      ...baseEnv,
+      COOKIE_SAME_SITE: 'none',
+      COOKIE_DOMAIN: '.example.com',
+    });
+    expect(crossSite.COOKIE_SAME_SITE).toBe('none');
+    expect(crossSite.COOKIE_DOMAIN).toBe('.example.com');
+
+    expect(() => parseEnv({ ...baseEnv, COOKIE_SAME_SITE: 'strict' })).toThrow();
+  });
 });

@@ -62,6 +62,7 @@ import { InMemoryRateLimiter } from '../infrastructure/security/InMemoryRateLimi
 import { JwtTokenService } from '../infrastructure/security/JwtTokenService';
 import { AuthController } from '../presentation/http/controllers/AuthController';
 import { TeamController } from '../presentation/http/controllers/TeamController';
+import { CookieConfig } from '../presentation/http/cookies';
 import { AuthRateLimitOptions } from '../presentation/http/middlewares/rateLimitMiddleware';
 import { AppEnv } from './env';
 
@@ -84,6 +85,7 @@ export interface ContainerDependencies {
   realtimePublisher: SocketIoRealtimePublisher;
   frontendOrigin: string;
   isProduction: boolean;
+  cookieConfig?: CookieConfig;
   authRateLimitOptions?: AuthRateLimitOptions;
   prisma?: PrismaClient;
 }
@@ -91,6 +93,7 @@ export interface ContainerDependencies {
 export interface AppContainer {
   frontendOrigin: string;
   isProduction: boolean;
+  cookieConfig?: CookieConfig;
   authRateLimitOptions?: AuthRateLimitOptions;
   prisma?: PrismaClient;
   tokenService: ITokenService;
@@ -292,13 +295,18 @@ export function buildContainer(deps: ContainerDependencies): AppContainer {
     deps.activityLogRepository,
   );
 
+  const cookieConfig: CookieConfig = deps.cookieConfig ?? {
+    secure: deps.isProduction,
+    sameSite: deps.isProduction ? 'none' : 'lax',
+  };
+
   const authController = new AuthController(
     registerUser,
     loginUser,
     refreshSession,
     logout,
     getCurrentUser,
-    deps.isProduction,
+    cookieConfig,
   );
 
   const teamController = new TeamController(
@@ -382,5 +390,10 @@ export function createProductionContainer(env: AppEnv): AppContainer {
     realtimePublisher: new SocketIoRealtimePublisher(),
     frontendOrigin: env.FRONTEND_ORIGIN,
     isProduction: env.NODE_ENV === 'production',
+    cookieConfig: {
+      secure: env.NODE_ENV === 'production',
+      sameSite: env.COOKIE_SAME_SITE ?? (env.NODE_ENV === 'production' ? 'none' : 'lax'),
+      domain: env.COOKIE_DOMAIN,
+    },
   });
 }

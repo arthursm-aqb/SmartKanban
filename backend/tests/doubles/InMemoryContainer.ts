@@ -60,6 +60,7 @@ import { CryptoInviteCodeGenerator } from '../../src/infrastructure/security/Cry
 import { InMemoryRateLimiter } from '../../src/infrastructure/security/InMemoryRateLimiter';
 import { JwtTokenService } from '../../src/infrastructure/security/JwtTokenService';
 import { AppContainer, buildContainer } from '../../src/main/container';
+import { CookieConfig } from '../../src/presentation/http/cookies';
 import { AuthRateLimitOptions } from '../../src/presentation/http/middlewares/rateLimitMiddleware';
 
 export class InMemoryStore {
@@ -523,6 +524,8 @@ class InMemoryActivityLogRepository implements IActivityLogRepository {
 export function createTestContainer(options?: {
   priorityClassifier?: IPriorityClassifier;
   frontendOrigin?: string;
+  isProduction?: boolean;
+  cookieConfig?: CookieConfig;
   authRateLimitOptions?: AuthRateLimitOptions;
 }): { container: AppContainer; store: InMemoryStore } {
   const store = new InMemoryStore();
@@ -551,7 +554,8 @@ export function createTestContainer(options?: {
     rateLimiter: new InMemoryRateLimiter(),
     realtimePublisher: new SocketIoRealtimePublisher(),
     frontendOrigin: options?.frontendOrigin ?? 'http://localhost:5173',
-    isProduction: false,
+    isProduction: options?.isProduction ?? false,
+    cookieConfig: options?.cookieConfig,
     authRateLimitOptions: options?.authRateLimitOptions,
   });
 
