@@ -1,18 +1,18 @@
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: kanban_inteligente_db
+    container_name: smart_kanban_db
     restart: unless-stopped
     environment:
-      POSTGRES_USER: kanban
-      POSTGRES_PASSWORD: kanban_dev_password
-      POSTGRES_DB: kanban_inteligente
+      POSTGRES_USER: ${POSTGRES_USER:?Defina POSTGRES_USER no .env da raiz}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD no .env da raiz}
+      POSTGRES_DB: ${POSTGRES_DB:-kanban_inteligente}
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - kanban_pg_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U kanban -d kanban_inteligente"]
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 5s
       timeout: 5s
       retries: 10

@@ -46,11 +46,12 @@ backend/src/
 ## Como Executar Localmente
 
 ### 1. Subir PostgreSQL
-Com Docker:
+Com Docker (copie `.env.example` para `.env` na raiz e defina usuário/senha):
 ```bash
+cp .env.example .env
 docker compose up -d
 ```
-*(Ou ajuste `backend/.env` apontando `DATABASE_URL` para seu PostgreSQL local.)*
+*(O serviço expõe a porta apenas em `127.0.0.1:5432`. Caso já tenha PostgreSQL local, apenas ajuste `backend/.env`.)*
 
 ### 2. Configurar Variáveis de Ambiente
 ```bash
