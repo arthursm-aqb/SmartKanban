@@ -603,6 +603,62 @@ dialog.win-dialog::backdrop {
   gap: 8px;
 }
 
+.sticky-note.dragging {
+  z-index: 20;
+  box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.45);
+}
+
+.sticky-drag-handle {
+  appearance: none;
+  flex: 1;
+  min-width: 0;
+  min-height: 26px;
+  padding: 3px 6px;
+  border: 1px dashed rgba(0, 0, 0, 0.28);
+  background: rgba(0, 0, 0, 0.06);
+  color: var(--note-ink);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-align: left;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: grab;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.sticky-drag-handle:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.sticky-drag-handle.dragging {
+  cursor: grabbing;
+  background: rgba(0, 0, 0, 0.14);
+}
+
+.sticky-drag-handle svg {
+  pointer-events: none;
+}
+
+.sticky-drag-handle-author {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sticky-nudge-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.25);
+  background: rgba(255, 255, 255, 0.55);
+  font-size: 0.72rem;
+}
+
 .sticky-YELLOW { background: var(--note-yellow); }
 .sticky-BLUE { background: var(--note-blue); }
 .sticky-PINK { background: var(--note-pink); }
@@ -687,6 +743,7 @@ dialog.win-dialog::backdrop {
   .subcolumn-zone,
   .story-task-row,
   .sticky-note,
+  .sticky-drag-handle,
   .prio-badge,
   .wip-pill {
     border: 2px solid ButtonText;
