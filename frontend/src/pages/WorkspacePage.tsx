@@ -12,6 +12,7 @@ import {
 import { ActivityLogTab } from '../components/ActivityLogTab';
 import { DesktopTopBar } from '../components/DesktopTopBar';
 import { KanbanBoard } from '../components/KanbanBoard';
+import { LoadingDotsText } from '../components/LoadingDotsText';
 import { ProjectContextDialog } from '../components/ProjectContextDialog';
 import { StickyNotesBoard } from '../components/StickyNotesBoard';
 import { BoardRealtimeProvider, useBoardRealtime } from '../contexts/BoardRealtimeContext';
@@ -169,9 +170,14 @@ function WorkspaceContent() {
           {!snapshot ? (
             <div style={{ padding: 24 }}>
               <p className="mono" style={{ margin: 0 }}>
-                {wsStatus === 'error'
-                  ? 'Não foi possível conectar ao quadro via WebSocket.'
-                  : 'Carregando quadro Kanban em tempo real via WebSocket...'}
+                {wsStatus === 'error' ? (
+                  'Não foi possível conectar ao quadro via WebSocket.'
+                ) : (
+                  <LoadingDotsText
+                    text="Carregando quadro Kanban da sua equipe, aguarde"
+                    className=""
+                  />
+                )}
               </p>
             </div>
           ) : (
