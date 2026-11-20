@@ -191,7 +191,7 @@ describe('KanbanBoardView', () => {
     // Row in Especificado groups t1 & t2 under h2 and displays priority 0-5 badges (highest first)
     const row = screen.getByTestId('specified-row-h2');
     expect(row).toHaveTextContent('Quadro em Tempo Real');
-    expect(row).toHaveTextContent('Linha com 2 tarefa(s) • conta 1 no WIP');
+    expect(row).not.toHaveTextContent(/conta 1 no WIP/i);
     expect(row).toHaveTextContent('P5 • Crítica');
     expect(row).toHaveTextContent('P2 • Baixa');
     expect(row.textContent?.indexOf('P5 • Crítica')).toBeLessThan(

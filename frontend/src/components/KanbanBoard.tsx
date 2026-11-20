@@ -556,13 +556,8 @@ export function KanbanBoardView({
                       data-testid={`specified-row-${row.storyId}`}
                     >
                       <div className="story-task-row-header">
-                        <div>
-                          <div style={{ fontWeight: 700, fontSize: '0.84rem' }}>
-                            {row.story?.title ?? 'História especificada'}
-                          </div>
-                          <div className="mono" style={{ fontSize: '0.72rem', color: 'var(--win-muted)' }}>
-                            Linha com {row.tasks.length} tarefa(s) • conta 1 no WIP
-                          </div>
+                        <div style={{ fontWeight: 700, fontSize: '0.84rem' }}>
+                          {row.story?.title ?? 'História especificada'}
                         </div>
                         <button
                           type="button"
