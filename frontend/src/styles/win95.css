@@ -632,6 +632,52 @@ dialog.win-dialog::backdrop {
   border-bottom: 1px solid var(--bevel-light);
 }
 
+/* Initial loading dots animation (. -> .. -> ... -> .. loop) */
+.loading-dots {
+  --dot-duration: 1.6s;
+  display: inline-flex;
+  white-space: nowrap;
+}
+
+.loading-dot-2 {
+  animation: loading-dot-2 var(--dot-duration) steps(1, end) infinite;
+}
+
+.loading-dot-3 {
+  animation: loading-dot-3 var(--dot-duration) steps(1, end) infinite;
+}
+
+@keyframes loading-dot-2 {
+  0% {
+    opacity: 0;
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes loading-dot-3 {
+  0% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  75%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loading-dots {
+    --dot-duration: 6s;
+  }
+}
+
 /* Windows High Contrast / Forced Colors Mode Support */
 @media (forced-colors: active) {
   .win-window,
