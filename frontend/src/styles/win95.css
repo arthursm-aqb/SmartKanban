@@ -10,43 +10,44 @@
   --font-ui: 'IBM Plex Sans', 'Tahoma', 'Segoe UI', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', 'Consolas', 'Courier New', monospace;
 
-  /* Win95 Classic Teal Desktop palette */
-  --desktop-bg: #1d4e4f;
-  --desktop-pattern: rgba(255, 255, 255, 0.04);
-  --win-surface: #dad7ce;
-  --win-surface-alt: #e8e6df;
-  --win-well: #f7f6f2;
-  --win-text: #15171a;
-  --win-muted: #4b5058;
-  --titlebar-start: #0b246b;
-  --titlebar-end: #2c67a0;
+  /* Modernized Win95 Classic Teal & Archival Slate palette */
+  --desktop-bg: #115e63;
+  --desktop-bg-vignette: #0c4449;
+  --desktop-pattern: rgba(255, 255, 255, 0.05);
+  --win-surface: #dde2e7;
+  --win-surface-alt: #e8ecf1;
+  --win-well: #f6f8fa;
+  --win-text: #111827;
+  --win-muted: #475569;
+  --titlebar-start: #173a5e;
+  --titlebar-end: #1c6b72;
   --titlebar-text: #ffffff;
-  --titlebar-inactive: #6e737b;
+  --titlebar-inactive: #64748b;
 
   /* 3D Bevel Edges (WCAG 1.4.11 >= 3:1 boundaries) */
   --bevel-light: #ffffff;
-  --bevel-mid: #c2beb4;
-  --bevel-dark: #5e626a;
-  --bevel-deep: #1e2126;
+  --bevel-mid: #c5cbd4;
+  --bevel-dark: #5f6876;
+  --bevel-deep: #1b222c;
 
-  /* Accents & Semantic States */
-  --accent: #0b4fa3;
-  --accent-hover: #083d82;
+  /* Accents & Semantic States (WCAG AA >= 4.5:1) */
+  --accent: #164e82;
+  --accent-hover: #0f3b64;
   --accent-text: #ffffff;
-  --focus-ring: #0b57d0;
-  --danger: #b31b1b;
-  --danger-bg: #fdecec;
-  --success: #166534;
-  --success-bg: #e7f6ec;
+  --focus-ring: #0952a5;
+  --danger: #b91c1c;
+  --danger-bg: #fef2f2;
+  --success: #15803d;
+  --success-bg: #f0fdf4;
   --warning: #92400e;
-  --warning-bg: #fef3c7;
+  --warning-bg: #fffbeb;
 
-  /* Sticky Notes (high-contrast ink on classic pastel notes) */
+  /* Sticky Notes (high-contrast ink on refined archival pastels) */
   --note-yellow: #fef08a;
   --note-blue: #bae6fd;
   --note-pink: #fbcfe8;
   --note-green: #bbf7d0;
-  --note-ink: #171717;
+  --note-ink: #111827;
 }
 
 *,
@@ -55,18 +56,24 @@
   box-sizing: border-box;
 }
 
-html,
+html {
+  min-height: 100%;
+  background-color: var(--desktop-bg-vignette);
+}
+
 body {
   margin: 0;
   padding: 0;
-  min-height: 100%;
+  min-height: 100vh;
   font-family: var(--font-ui);
   font-size: 15px;
   line-height: 1.45;
   color: var(--win-text);
   background-color: var(--desktop-bg);
-  background-image: radial-gradient(var(--desktop-pattern) 1px, transparent 0);
-  background-size: 16px 16px;
+  background-image:
+    radial-gradient(var(--desktop-pattern) 1px, transparent 0),
+    radial-gradient(circle at 20% 15%, var(--desktop-bg) 0%, var(--desktop-bg-vignette) 100%);
+  background-size: 16px 16px, 100% 100%;
 }
 
 /* Focus indicators */
@@ -556,20 +563,20 @@ dialog.win-dialog::backdrop {
 }
 
 .prio-0 {
-  background: #e5e7eb;
-  color: #374151;
+  background: #eef1f4;
+  color: #3b4454;
 }
 .prio-1 {
-  background: #dbeafe;
-  color: #1e40af;
+  background: #e0f2fe;
+  color: #075985;
 }
 .prio-2 {
-  background: #d1fae5;
-  color: #065f46;
+  background: #dcfce7;
+  color: #166534;
 }
 .prio-3 {
   background: #fef3c7;
-  color: #92400e;
+  color: #854d0e;
 }
 .prio-4 {
   background: #ffedd5;
